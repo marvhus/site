@@ -1,0 +1,7 @@
+{
+    "files": {
+        "head": "./page-head.html",
+        "navbar": "./page-navbar.html",
+        "footer": "./page-footer.html
+    }
+}
