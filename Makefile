@@ -3,9 +3,9 @@ OBJ := $(BIN)/obj
 SRC := tools
 
 CXX      := g++
-CXXFLAGS := -ggdb -Wall -Wextra -Werror -Wpedantic -std=c++20 -pedantic -I$(SRC)
+CXXFLAGS := -ggdb -Wall -Wextra -Werror -Wpedantic -std=c++20 -pedantic -I$(SRC) -Wno-unused-parameter
 CC      := gcc
-CCFLAGS := -ggdb -Wall -Wextra -Werror -Wpedantic -std=c11 -pedantic -I$(SRC)
+CCFLAGS := -ggdb -Wall -Wextra -Werror -Wpedantic -std=c11 -pedantic -I$(SRC) -Wno-unused-parameter
 
 .PHONY: all clean
 
