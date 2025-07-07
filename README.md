@@ -2,14 +2,32 @@
 
 Template for building simple static websites from markdown files.
 
-## How to build static HTML files
+## Compiling the purpose built tools
 
-The markdown files are in `pages/`.  To convert these to HTML, build the `builder` tool found in `tools/`.
-(You can do this using the Makefile in the root of the repository, just run `make` while in the root of the repository.)
-The builder tool binary will be placed in `tools-bin`.  Just run this binary while in the root of the repository to convert the
-markdown files into HTML.  These will be placed in `public/` following the same structure as in the `pages/` directory.
+Just run the `make` command to compile all the tools found in `tools/`.
+The binaries will be placed in `tools-bin/`.
 
-The templates used to build the HTML files are located in `templates/`
+## Changing the templates used when building the HTML pages
 
-Any hardcoded files, like any CSS you may want is located in `web/`.  There currently is no tooling to automatically copy over
-this to the `public/` folder so you have to do this yourself.
+The templates are placed in `templates/`.
+There you will find some files that are used as the HTML around the content of each page.
+This is used so you don't need to manually update every page when you want to update the head, navbar, or footer.
+Updating any of these files and using the `builder` tool again will update every page to contain these changes.
+
+## Building the markdown pages into HTML
+
+You can use the `builder` tool found in `tools-bin/` to convert the files in `pages/` to HTML files placed into `public/`.
+Just run the binary while in the root of the project.
+
+## Including extra content
+
+To include content not created by the `builder` tool, place it in `web/`.
+In the current example there is a CSS file, which is the style for the website.
+You can use it for anything you want, for example you could place the images you want to show on the website here, or you could include HTML you have written from scratch in case you want full control over the layout of a specific page, etc.
+
+## Deploying
+
+To deploy, just serve the content in the `public/` directory.
+
+> [!NOTE]
+> Currently there is no automation to copy over contents of `web/` to `public/`, so you will have to do this yourself.
