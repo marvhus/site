@@ -45,6 +45,9 @@ main {
     width: 70vw;
     min-height: calc(100vh - 3em - 8em - 4em);
 }
+main hr {
+    margin: 0.5em 0 0.5em 0;
+}
 
 footer {
     height: 8em;

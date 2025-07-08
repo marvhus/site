@@ -4,4 +4,5 @@ This is a test
 
 ---
 
-[Bar](/foo/bar.html)
+- Different page in subdirectory: [Bar](/foo/bar.html)
+- Custom HTML in MarkDown page: [HTML](/html.html)
