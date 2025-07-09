@@ -20,7 +20,7 @@ void handle_chunk(const MD_CHAR* data, MD_SIZE length, void* userdata) {
     *html_builder << view;
 }
 
-void build_html(std::string path, std::string output) {
+void build_html(std::filesystem::path source, std::filesystem::path output) {
 
     std::stringstream html_builder;
     html_builder << "<!DOCTYPE html>\n<html>\n"
@@ -30,7 +30,7 @@ void build_html(std::string path, std::string output) {
                  << "<main>\n";
 
     { // Read, Parse, and Render MD file to HTML
-        std::string content = read_entire_file(path);
+        std::string content = read_entire_file(source);
         if (int result = md_html(content.data(), content.length(), handle_chunk, &html_builder,
                                  MD_FLAG_COLLAPSEWHITESPACE | MD_FLAG_STRIKETHROUGH,
                                  MD_HTML_FLAG_DEBUG); result != 0) {
@@ -43,10 +43,7 @@ void build_html(std::string path, std::string output) {
                  << read_entire_file("templates/footer.html") // @TODO: read from config file
                  << "</body>\n</html>";
 
-    { // Create parrent directory
-        std::filesystem::path file_path(output);
-        std::filesystem::create_directory(file_path.parent_path());
-    }
+    std::filesystem::create_directories(output.parent_path());
 
     { // Write entire file
         std::ofstream file(output);
@@ -54,13 +51,13 @@ void build_html(std::string path, std::string output) {
         file.close();
     }
 
-    std::cout << path << " -> " << output << std::endl;
+    std::cout << source << " -> " << output << std::endl;
 }
 
-void walk_directory(std::string_view directory_path) {
-    for (const std::filesystem::directory_entry& entry: std::filesystem::directory_iterator(directory_path)) {
+void walk_directory(std::filesystem::path directory) {
+    for (const std::filesystem::directory_entry& entry: std::filesystem::directory_iterator(directory)) {
         if (entry.is_directory()) {
-            walk_directory(entry.path().string());
+            walk_directory(entry.path());
             continue;
         }
         // @TODO: check if file is .md file?
@@ -87,10 +84,14 @@ void walk_directory(std::string_view directory_path) {
 
         result_path << ".html";
 
-        build_html(entry.path().string(), result_path.str());
+        std::filesystem::path source_path = entry.path();
+        std::filesystem::path output_path(result_path.str());
+
+        build_html(source_path, output_path);
     }
 }
 
 int main(void) {
-    walk_directory("pages/"); // @TODO: read from config file
+    std::filesystem::path directory("pages/");
+    walk_directory(directory); // @TODO: read from config file
 }
