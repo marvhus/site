@@ -1,14 +1,22 @@
+#include <cassert>
+#include <cstdio>
 #include <fstream>
 #include <functional>
 #include <string_view>
 #include <iostream>
 #include <sstream>
+#include <string>
 #include <filesystem>
 
 #include <md4c/md4c.h>
 #include <md4c/md4c-html.h>
 
 std::string read_entire_file(std::string path) {
+    if (!std::filesystem::exists(path)) {
+        std::cout << "Attempted to read file that does not exist: " << path << std::endl;
+        exit(1);
+    }
+
     std::ifstream file(path);
     std::stringstream content;
     content << file.rdbuf();
@@ -33,19 +41,110 @@ std::string render_html(std::filesystem::path file_path) {
     return builder.str();
 }
 
+std::string template_extract_value(std::ifstream& page_template) {
+    assert(page_template.get() == '{');
+
+    std::stringstream value_builder;
+    bool backslash = false;
+    bool done = false;
+    int counter = 0;
+
+    while (!done) {
+        char current = page_template.get();
+        if (current == EOF) {
+            std::cout << "End of file while parsing template value" << std::endl;
+            exit(1);
+        }
+
+        switch (current) {
+            case '\\': {
+                if (backslash) {
+                    backslash = false;
+                    break;
+                }
+                backslash = true;
+            } continue;
+            case '{': {
+                if (backslash)
+                    break;
+
+                counter++;
+            } break;
+            case '}': {
+                if (backslash)
+                    break;
+
+                if (counter > 0) {
+                    counter--;
+                    continue;
+                }
+
+                done = true;
+            } continue;
+        }
+
+        value_builder << current;
+        backslash = false;
+    }
+
+    return value_builder.str();
+}
+
+std::string trim_whitespace(std::string str) {
+    const std::string whitespace = " \t\r\n";
+
+    const auto begin = str.find_first_not_of(whitespace);
+    const auto end   = str.find_last_not_of(whitespace);
+    const auto range = end - begin + 1;
+
+    return str.substr(begin, range);
+}
+
 void build_html(std::filesystem::path source, std::filesystem::path output) {
     std::stringstream html_builder;
-    html_builder << "<!DOCTYPE html>\n"
-                 << "<html>\n"
-                    << read_entire_file("templates/head.html")
-                    << "<body>\n"
-                        << read_entire_file("templates/navbar.html")
-                        << "<main>\n"
-                            << render_html(source)
-                        << "</main>\n"
-                        << read_entire_file("templates/footer.html")
-                    << "</body>\n"
-                 << "</html>";
+    std::ifstream page_template("page.template");
+
+    bool backslash = false;
+    while (page_template.peek() != EOF) {
+        char current = page_template.get();
+        switch (current) {
+            case '\\': {
+                if (backslash) {
+                    backslash = false;
+                    break;
+                }
+
+                backslash = true;
+            } continue;
+            case '{': {
+                if (backslash)
+                    break;
+
+                page_template.unget();
+                std::string value = template_extract_value(page_template);
+                if (value.length() < 1) {
+                    std::cout << "Template has empty value" << std::endl;
+                    exit(1);
+                }
+
+                if (value.at(0) == '#') {
+                    // @TODO: Check if the text after # is `page`  For now this works, but may be a bit weird,
+                    // and will need to be updated later on if we need more internal things to be used as a value.
+                    html_builder << trim_whitespace(render_html(source));
+                    backslash = false;
+                    continue;
+                }
+
+                std::stringstream template_value_file_path;
+                template_value_file_path << "templates/" << value << ".html";
+                html_builder << trim_whitespace(read_entire_file(template_value_file_path.str()));
+                backslash = false;
+            } continue;
+        }
+
+        html_builder << current;
+        backslash = false;
+    }
 
     std::filesystem::create_directories(output.parent_path());
 

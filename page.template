@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html>
+{head}
+<body>
+{navbar}
+<main>{#page}</main>
+{footer}
+</body>
+</html>
