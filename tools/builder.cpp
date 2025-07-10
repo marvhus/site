@@ -21,28 +21,31 @@ void handle_chunk(const MD_CHAR* data, MD_SIZE length, void* userdata) {
     *html_builder << view;
 }
 
-void build_html(std::filesystem::path source, std::filesystem::path output) {
-
-    std::stringstream html_builder;
-    html_builder << "<!DOCTYPE html>\n<html>\n"
-                 << read_entire_file("templates/head.html") // @TODO: read from config file
-                 << "<body>\n"
-                 << read_entire_file("templates/navbar.html") // @TODO: read from config file
-                 << "<main>\n";
-
-    { // Read, Parse, and Render MD file to HTML
-        std::string content = read_entire_file(source);
-        if (int result = md_html(content.data(), content.length(), handle_chunk, &html_builder,
-                                 MD_FLAG_COLLAPSEWHITESPACE | MD_FLAG_STRIKETHROUGH,
-                                 MD_HTML_FLAG_DEBUG); result != 0) {
-            std::cout << "Failed to parse and render markdown." << std::endl;
-            exit(1);
-        }
+std::string render_html(std::filesystem::path file_path) {
+    std::stringstream builder;
+    std::string content = read_entire_file(file_path);
+    if (int result = md_html(content.data(), content.length(), handle_chunk, &builder,
+                             MD_FLAG_COLLAPSEWHITESPACE | MD_FLAG_STRIKETHROUGH,
+                             MD_HTML_FLAG_DEBUG); result != 0) {
+        std::cout << "Failed to parse and render markdown." << std::endl;
+        exit(1);
     }
+    return builder.str();
+}
 
-    html_builder << "</main>\n"
-                 << read_entire_file("templates/footer.html") // @TODO: read from config file
-                 << "</body>\n</html>";
+void build_html(std::filesystem::path source, std::filesystem::path output) {
+    std::stringstream html_builder;
+    html_builder << "<!DOCTYPE html>\n"
+                 << "<html>\n"
+                    << read_entire_file("templates/head.html")
+                    << "<body>\n"
+                        << read_entire_file("templates/navbar.html")
+                        << "<main>\n"
+                            << render_html(source)
+                        << "</main>\n"
+                        << read_entire_file("templates/footer.html")
+                    << "</body>\n"
+                 << "</html>";
 
     std::filesystem::create_directories(output.parent_path());
 
@@ -95,10 +98,11 @@ void copy_web_file(std::filesystem::path file_path) {
     result_path << tmp_path2;
 
     std::filesystem::path output_path(result_path.str());
-    if (!std::filesystem::exists(output_path))
+    std::filesystem::create_directories(output_path.parent_path());
+    if (!std::filesystem::exists(output_path)) {
         std::filesystem::copy_file(file_path, output_path);
-
-    std::cout << file_path << " -> " << output_path << std::endl;
+        std::cout << file_path << " -> " << output_path << std::endl;
+    }
 }
 
 void walk_directory(std::filesystem::path directory, std::function<void (std::filesystem::path)> function) {
