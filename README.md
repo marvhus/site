@@ -28,6 +28,3 @@ You can use it for anything you want, for example you could place the images you
 ## Deploying
 
 To deploy, just serve the content in the `public/` directory.
-
-> [!NOTE]
-> Currently there is no automation to copy over contents of `web/` to `public/`, so you will have to do this yourself.
