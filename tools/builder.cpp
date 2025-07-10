@@ -1,4 +1,5 @@
 #include <fstream>
+#include <functional>
 #include <string_view>
 #include <iostream>
 #include <sstream>
@@ -54,44 +55,42 @@ void build_html(std::filesystem::path source, std::filesystem::path output) {
     std::cout << source << " -> " << output << std::endl;
 }
 
-void walk_directory(std::filesystem::path directory) {
+void build_pages_file(std::filesystem::path file_path) {
+    std::stringstream result_path;
+    result_path << "public/";
+
+    std::string tmp_path = file_path.string();
+    int start = 0, end = tmp_path.length();
+
+    constexpr std::string_view PREFIX = "pages/", SUFFIX = ".md";
+    if (tmp_path.starts_with(PREFIX)) {
+        int length = PREFIX.length();
+        start += length;
+        end -= length;
+    }
+    if (tmp_path.ends_with(SUFFIX)) {
+        int length = SUFFIX.length();
+        end -= length;
+    }
+    std::string tmp_path2 = tmp_path.substr(start, end);
+
+    result_path << tmp_path2
+                << ".html";
+
+    std::filesystem::path output_path(result_path.str());
+    build_html(file_path, output_path);
+}
+
+void walk_directory(std::filesystem::path directory, std::function<void (std::filesystem::path)> function) {
     for (const std::filesystem::directory_entry& entry: std::filesystem::directory_iterator(directory)) {
         if (entry.is_directory()) {
-            walk_directory(entry.path());
+            walk_directory(entry.path(), function);
             continue;
         }
-        // @TODO: check if file is .md file?
-
-        std::stringstream result_path;
-        result_path << "public/";
-
-        std::string tmp_path = entry.path().string();
-        int start = 0, end = tmp_path.length();
-
-        constexpr std::string_view PREFIX = "pages/", SUFFIX = ".md"; // @TODO: read from config file
-        if (tmp_path.starts_with(PREFIX)) {
-            int length = PREFIX.length();
-            start += length;
-            end -= length;
-        }
-        if (tmp_path.ends_with(SUFFIX)) {
-            int length = SUFFIX.length();
-            end -= length;
-        }
-        std::string tmp_path2 = tmp_path.substr(start, end);
-
-        result_path << tmp_path2;
-
-        result_path << ".html";
-
-        std::filesystem::path source_path = entry.path();
-        std::filesystem::path output_path(result_path.str());
-
-        build_html(source_path, output_path);
+        function(entry.path());
     }
 }
 
 int main(void) {
-    std::filesystem::path directory("pages/");
-    walk_directory(directory); // @TODO: read from config file
+    walk_directory("pages/", build_pages_file); // @TODO: read from config file
 }
