@@ -51,8 +51,6 @@ void build_html(std::filesystem::path source, std::filesystem::path output) {
         file << html_builder.str();
         file.close();
     }
-
-    std::cout << source << " -> " << output << std::endl;
 }
 
 void build_pages_file(std::filesystem::path file_path) {
@@ -79,6 +77,28 @@ void build_pages_file(std::filesystem::path file_path) {
 
     std::filesystem::path output_path(result_path.str());
     build_html(file_path, output_path);
+
+    std::cout << file_path << " -> " << output_path << std::endl;
+}
+
+void copy_web_file(std::filesystem::path file_path) {
+    std::stringstream result_path;
+    result_path << "public/";
+
+    std::string tmp_path = file_path.string();
+
+    int prefix = 0;
+    constexpr std::string_view PREFIX = "web/";
+    if (tmp_path.starts_with(PREFIX)) prefix = PREFIX.length();
+
+    std::string tmp_path2 = tmp_path.substr(prefix, tmp_path.length() - prefix);
+    result_path << tmp_path2;
+
+    std::filesystem::path output_path(result_path.str());
+    if (!std::filesystem::exists(output_path))
+        std::filesystem::copy_file(file_path, output_path);
+
+    std::cout << file_path << " -> " << output_path << std::endl;
 }
 
 void walk_directory(std::filesystem::path directory, std::function<void (std::filesystem::path)> function) {
@@ -92,5 +112,9 @@ void walk_directory(std::filesystem::path directory, std::function<void (std::fi
 }
 
 int main(void) {
+    std::cout << "=== Building pages/ ===" << std::endl;
     walk_directory("pages/", build_pages_file); // @TODO: read from config file
+
+    std::cout << "=== Copying web/ ======" << std::endl;
+    walk_directory("web/", copy_web_file);
 }
